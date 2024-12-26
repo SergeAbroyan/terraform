@@ -1,0 +1,108 @@
+# Ensure the Prometheus user and group exist
+- name: Create Prometheus user and group
+  user:
+    name: prometheus
+    system: yes
+    shell: /sbin/nologin
+    create_home: no
+
+# Download Prometheus tarball
+- name: Download Prometheus
+  get_url:
+    url: "https://github.com/prometheus/prometheus/releases/download/v2.45.0/prometheus-2.45.0.linux-amd64.tar.gz"
+    dest: /tmp/prometheus.tar.gz
+
+# Extract Prometheus tarball
+- name: Extract Prometheus archive
+  unarchive:
+    src: /tmp/prometheus.tar.gz
+    dest: /opt/
+    remote_src: yes
+
+# Verify Prometheus binary exists
+- name: Verify Prometheus binaries exist
+  stat:
+    path: /opt/prometheus-2.45.0.linux-amd64/prometheus
+  register: prometheus_binary
+
+- name: Fail if Prometheus binary is missing
+  fail:
+    msg: "Prometheus binary is missing. Extraction might have failed."
+  when: not prometheus_binary.stat.exists
+
+# Move Prometheus binary
+- name: Move Prometheus binaries
+  command: mv /opt/prometheus-2.45.0.linux-amd64/prometheus /usr/local/bin/
+  args:
+    creates: /usr/local/bin/prometheus
+
+# Move Promtool binary
+- name: Move Promtool binary
+  command: mv /opt/prometheus-2.45.0.linux-amd64/promtool /usr/local/bin/
+  args:
+    creates: /usr/local/bin/promtool
+
+# Create Prometheus configuration directory
+- name: Create Prometheus config directory
+  file:
+    path: /etc/prometheus
+    state: directory
+    owner: prometheus
+    group: prometheus
+
+# Copy Prometheus configuration
+- name: Create Prometheus configuration file
+  copy:
+    dest: /etc/prometheus/prometheus.yml
+    content: |
+      global:
+        scrape_interval: 15s
+
+      scrape_configs:
+        - job_name: "prometheus"
+          static_configs:
+            - targets: ["localhost:9090"]
+    owner: prometheus
+    group: prometheus
+    mode: '0644'
+
+# Create Prometheus systemd service file
+- name: Create Prometheus service file
+  copy:
+    dest: /etc/systemd/system/prometheus.service
+    content: |
+      [Unit]
+      Description=Prometheus
+      After=network.target
+
+      [Service]
+      User=prometheus
+      ExecStart=/usr/local/bin/prometheus \
+        --config.file=/etc/prometheus/prometheus.yml \
+        --storage.tsdb.path=/var/lib/prometheus \
+        --web.console.templates=/usr/share/prometheus/consoles \
+        --web.console.libraries=/usr/share/prometheus/console_libraries
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
+    mode: '0644'
+
+# Create Prometheus data directory
+- name: Create Prometheus data directory
+  file:
+    path: /var/lib/prometheus
+    state: directory
+    owner: prometheus
+    group: prometheus
+
+# Reload systemd and start Prometheus
+- name: Reload systemd daemon
+  command: systemctl daemon-reload
+
+- name: Enable and start Prometheus service
+  systemd:
+    name: prometheus
+    enabled: yes
+    state: started
+

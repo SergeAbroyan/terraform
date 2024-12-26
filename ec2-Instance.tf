@@ -7,10 +7,10 @@ resource "aws_instance" "ec2_instance" {
   key_name      = aws_key_pair.generated_key.key_name # Associate the key pair
 
 
-  user_data = templatefile("${path.module}/monitoring/combined_userdata.tpl", {
-  prometheus_userdata = file("${path.module}/monitoring/prometheus_userdata.yaml"),
-  grafana_userdata    = file("${path.module}/monitoring/grafana_userdata.yaml")
-})
+#   user_data = templatefile("${path.module}/monitoring/combined_userdata.tpl", {
+#   prometheus_userdata = file("${path.module}/monitoring/prometheus_userdata.yaml"),
+#   grafana_userdata    = file("${path.module}/monitoring/grafana_userdata.yaml")
+# })
 
 
 
@@ -21,4 +21,16 @@ resource "aws_instance" "ec2_instance" {
 
 }
 
-
+# Generate the Ansible inventory file dynamically
+resource "local_file" "ansible_inventory" {
+  filename = "${path.module}/ansible/inventory/hosts.yml"
+  content  = <<EOT
+all:
+  hosts:
+    ec2_instance:
+      ansible_host: ${aws_instance.ec2_instance.public_ip}
+      ansible_user: ec2-user
+      ansible_ssh_private_key_file: ${local_file.private_key_file.filename}
+EOT
+  depends_on = [aws_instance.ec2_instance]
+}
