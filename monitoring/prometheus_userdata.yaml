@@ -1,0 +1,35 @@
+#!/bin/bash
+dnf update -y
+dnf install -y wget
+useradd prometheus
+mkdir /etc/prometheus /var/lib/prometheus
+cd /tmp
+wget https://github.com/prometheus/prometheus/releases/download/v2.41.0/prometheus-2.41.0.linux-amd64.tar.gz
+tar xvf prometheus-2.41.0.linux-amd64.tar.gz
+cp prometheus-2.41.0.linux-amd64/prometheus /usr/local/bin/
+cp prometheus-2.41.0.linux-amd64/promtool /usr/local/bin/
+cp -r prometheus-2.41.0.linux-amd64/consoles /etc/prometheus/
+cp -r prometheus-2.41.0.linux-amd64/console_libraries /etc/prometheus/
+cp prometheus-2.41.0.linux-amd64/prometheus.yml /etc/prometheus/prometheus.yml
+chown -R prometheus:prometheus /etc/prometheus /var/lib/prometheus
+
+cat <<EOF > /etc/systemd/system/prometheus.service
+[Unit]
+Description=Prometheus
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=prometheus
+ExecStart=/usr/local/bin/prometheus \
+  --config.file=/etc/prometheus/prometheus.yml \
+  --storage.tsdb.path=/var/lib/prometheus/
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable prometheus
+systemctl start prometheus

@@ -1,0 +1,10 @@
+#!/bin/bash
+dnf update -y
+dnf install -y wget
+useradd grafana
+cd /tmp
+wget https://dl.grafana.com/oss/release/grafana-9.5.2-1.x86_64.rpm
+dnf install -y grafana-9.5.2-1.x86_64.rpm
+systemctl daemon-reload
+systemctl enable grafana-server
+systemctl start grafana-server

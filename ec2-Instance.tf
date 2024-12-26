@@ -1,0 +1,24 @@
+# EC2 Instance
+resource "aws_instance" "ec2_instance" {
+  ami           = "ami-01816d07b1128cd2d" 
+  instance_type = "t2.micro"
+  subnet_id     = aws_subnet.public_subnet.id
+  security_groups = [aws_security_group.allow_ssh.id]
+  key_name      = aws_key_pair.generated_key.key_name # Associate the key pair
+
+
+  user_data = templatefile("${path.module}/monitoring/combined_userdata.tpl", {
+  prometheus_userdata = file("${path.module}/monitoring/prometheus_userdata.yaml"),
+  grafana_userdata    = file("${path.module}/monitoring/grafana_userdata.yaml")
+})
+
+
+
+  tags = {
+    Name = "ec2-instance"
+  }
+
+
+}
+
+
