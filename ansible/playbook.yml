@@ -4,3 +4,4 @@
     - bootstrap  # Ensures the system is ready
     - grafana    # Installs Grafana
     - prometheus # Installs Prometheus
+    - java       # Installs Java
