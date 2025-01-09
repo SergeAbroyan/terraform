@@ -7,7 +7,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/Tyom022/terraform-grafana-prometheus.git'
+                git branch: 'terraform_jenkins', url: 'https://github.com/SergeAbroyan/terraform.git'
             }
         }
         stage('Select Terraform Workspace') {
