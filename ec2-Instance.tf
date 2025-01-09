@@ -34,3 +34,19 @@ all:
 EOT
   depends_on = [aws_instance.ec2_instance]
 }
+
+resource "null_resource" "ansible_provision" {
+  depends_on = [aws_instance.ec2_instance, local_file.ansible_inventory, null_resource.wait_for_instance]
+
+  provisioner "local-exec" {
+    command = "ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ${path.module}/ansible/inventory/hosts.yml -u ec2-user --private-key ${path.module}/awsid_rsa ${path.module}/ansible/playbook.yml"
+  }
+}
+
+resource "null_resource" "wait_for_instance" {
+  depends_on = [aws_instance.ec2_instance]
+
+  provisioner "local-exec" {
+    command = "sleep 30"
+  }
+}

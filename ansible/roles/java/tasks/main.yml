@@ -1,26 +1,22 @@
 ---
-# Add Amazon Corretto repository (alternative if OpenJDK is unavailable)
-- name: Add Amazon Corretto 11 repository
+# Add Amazon Corretto repository (for Corretto 17)
+- name: Add Amazon Corretto GPG key
   command: sudo rpm --import https://yum.corretto.aws/corretto.key
   become: yes
-
-- name: Install the yum repository for Amazon Corretto 11
+- name: Install the yum repository for Amazon Corretto 17
   get_url:
     url: https://yum.corretto.aws/corretto.repo
     dest: /etc/yum.repos.d/corretto.repo
     mode: '0644'
-
-# Install Amazon Corretto 11
-- name: Install Amazon Corretto 11
+# Install Amazon Corretto 17
+- name: Install Amazon Corretto 17
   dnf:
-    name: java-11-amazon-corretto
+    name: java-17-amazon-corretto
     state: present
-
 # Verify Java Installation
 - name: Verify Java version
   command: java -version
   register: java_version_output
   ignore_errors: yes
-
 - debug:
     msg: "{{ java_version_output.stderr }}"
